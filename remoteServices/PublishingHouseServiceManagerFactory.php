@@ -13,22 +13,20 @@ class PublishingHouseServiceManagerFactory {
 
 static function buildLivrariaServiceManager(){
 
-    $livrariaServiceManager = new PublishingHouseServiceManager();
+    $publishingHouseServiceManager = new PublishingHouseServiceManager();
 
-    $livrariaServiceManager->addServiceClient(
-        new DEIPublishingHouseServiceClient(
-            "http://phpdev2.dei.isep.ipp.pt/~arqsi/trabalho1/editora1.php",
-            "Editora 1"
-        )
+    //Import configuration
+    $config = require("config/RemoteService.php");
+
+    //Add DEIPublishingHouseServiceClient objects to PublishingHouseManager
+    $deiConfig = $config["DEI"];
+    foreach($deiConfig as $name => $path )
+    {
+    $publishingHouseServiceManager->addServiceClient(
+        new DEIPublishingHouseServiceClient($name,$path)
     );
+    }
 
-    $livrariaServiceManager->addServiceClient(
-        new DEIPublishingHouseServiceClient(
-            "http://phpdev2.dei.isep.ipp.pt/~arqsi/trabalho1/editora2.php",
-            "Editora 2"
-        )
-    );
-
-    return $livrariaServiceManager;
+    return $publishingHouseServiceManager;
 }
 }

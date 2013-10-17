@@ -12,17 +12,23 @@ class DEIPublishingHouseServiceClient implements IPublishingHouseServiceClient
 {
 
     private $host;
-    private $libraryTag;
+    private $path;
 
-    function __construct($host, $libraryTag)
+    function __construct($name,$path)
     {
-        $this->host = $host;
-        $this->libraryTag = $libraryTag;
+        $this->host = $path;
+        $this->path = $name;
     }
 
     function getCategories()
     {
-        $dom = $this->getDocumentFromUrl($this->host . "?categoria=todas");
+        $url =  $this->host . "?categoria=todas";
+
+        try {
+            $dom = $this->getDocumentFromUrl($url);
+        } catch (Exception $e) {
+            return array();
+        }
         $categoryNodeList = $dom->getElementsByTagName('categoria');
 
         return $this->parseCategories($categoryNodeList);
@@ -35,7 +41,11 @@ class DEIPublishingHouseServiceClient implements IPublishingHouseServiceClient
         $url = $this->host . "?numero=$limit";
 
         //Generate array of books from DOM Document
-        $dom = $this->getDocumentFromUrl($url);
+        try {
+            $dom = $this->getDocumentFromUrl($url);
+        } catch (Exception $e) {
+            return array();
+        }
         $bookNodeList = $dom->getElementsByTagName('book');
 
         //parse and return an array of books
@@ -48,14 +58,19 @@ class DEIPublishingHouseServiceClient implements IPublishingHouseServiceClient
         $url = $this->host . "?categoria=$category";
 
         //Generate array of books from DOM Document
-        $dom = $this->getDocumentFromUrl($url);
+        try {
+            $dom = $this->getDocumentFromUrl($url);
+        } catch (Exception $e) {
+            return array();
+        }
         $bookNodeList = $dom->getElementsByTagName('book');
 
         //parse and return an array of books
         return $this->parseBooks($bookNodeList);
     }
 
-    private function parseCategories($categoryNodeList){
+    private function parseCategories($categoryNodeList)
+    {
         foreach ($categoryNodeList as $categoryElement) {
             $categoryArray[] = new Category($categoryElement->nodeValue);
         }
@@ -72,7 +87,7 @@ class DEIPublishingHouseServiceClient implements IPublishingHouseServiceClient
             $publicacao = $bookElement->childNodes->item(4)->nodeValue;
             $news = $bookElement->childNodes->item(5)->nodeValue;
 
-            $bookArray[] = new Book($title, $author, $category, $isbn, $publicacao, $news,$this->libraryTag);
+            $bookArray[] = new Book($title, $author, $category, $isbn, $publicacao, $news, $this->path);
         }
         return $bookArray;
     }
@@ -81,6 +96,9 @@ class DEIPublishingHouseServiceClient implements IPublishingHouseServiceClient
     {
 
         $XMLResponse = file_get_contents($url);
+        if ($XMLResponse === FALSE) {
+            throw new Exception('Error retriving content from remote api');
+        }
         $dom = new DOMDocument();
 
         /*
@@ -89,8 +107,11 @@ class DEIPublishingHouseServiceClient implements IPublishingHouseServiceClient
          Only when returning books
        */
         // echo $url . "\n" . $XMLResponse . "\n********************\n";
+        $success = $dom->loadXML("<root>" . utf8_encode($XMLResponse) . "</root>");
 
-        $dom->loadXML("<root>" . utf8_encode($XMLResponse) . "</root>");
+        if (!$success) {
+            throw new Exception('Error while loading XML from remote API');
+        }
 
         return $dom;
     }

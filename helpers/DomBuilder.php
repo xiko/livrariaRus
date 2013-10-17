@@ -24,7 +24,7 @@ class DomBuilder {
         return $dom;
     }
 
-    public static function createbooksDocument(Array $books){
+    public static function createBooksDocument(Array $books){
         $dom = new DOMDocument('1.0');
         $dom->formatOutput = true;
 
